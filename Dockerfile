@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir --upgrade gunicorn akshare
 
 RUN pip install --no-cache-dir .
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "aktools.main:app", "-k", "uvicorn.workers.UvicornWorker"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "aktools.main:app", "-k", "uvicorn.workers.UvicornWorker", "--workers", "2", "--threads", "1", "--worker-connections", "1000"]
