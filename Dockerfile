@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bullseye
+FROM docker.1ms.run/python:3.13-slim-bullseye
 
 WORKDIR /app
 
