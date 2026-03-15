@@ -15,4 +15,7 @@ WORKDIR $APP_HOME
 # 访问日志和错误日志都输出到 stdout，便于 docker logs 收集
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app", \
     "-k", "uvicorn.workers.UvicornWorker", \
+    "--workers", "2", \
+    "--timeout", "120", \
+    "--graceful-timeout", "30", \
     "--log-level", "info"]
