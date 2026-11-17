@@ -1,11 +1,19 @@
 FROM docker.1ms.run/python:3.13-slim-bullseye
 
+# 使用华为云 PyPI 镜像源
+ENV PIP_INDEX_URL=https://repo.huaweicloud.com/repository/pypi/simple/
+
 # 升级 pip 到最新版
 RUN pip install --upgrade pip
 
 # 安装依赖
-RUN pip install --no-cache-dir akshare fastapi uvicorn gunicorn -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com --upgrade
-RUN pip install --no-cache-dir aktools -i https://mirrors.aliyun.com/pypi/simple --upgrade
+RUN pip install --no-cache-dir akshare fastapi uvicorn gunicorn --upgrade
+RUN pip install --no-cache-dir aktools --upgrade
+
+# 特供版 akshare 包
+COPY akshare-1.20.65+local-py3-none-any.whl /tmp/
+RUN pip uninstall -y akshare \
+    && pip install /tmp/akshare-1.20.65+local-py3-none-any.whl
 
 # 设置工作目录
 ENV APP_HOME=/usr/local/lib/python3.13/site-packages/aktools
