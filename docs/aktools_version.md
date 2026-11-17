@@ -1,147 +1,167 @@
-## [AKTools](https://github.com/akfamily/aktools) 版本说明
+# 版本说明
 
-## 开发目标
+本页记录 [AKTools](https://github.com/akfamily/aktools) 每个版本的主要变更，最新版本在最前。升级到最新版：
 
-1. 提供 AKShare 的 HTTP API 核心功能
-2. 提供多线程访问功能
-3. 增加接口状态码支持
-4. 增加接口用户认证
-5. 增加用户自定义数据接口功能
-6. 增加主页及增强命令行支持
-7. 增加测试支持
-8. 增加 SQLite 数据库支持
+```shell
+pip install aktools --upgrade -i https://pypi.org/simple
+```
 
-## 开发进度
+AKTools 只负责把 HTTP 请求转发给 AKShare，数据接口的新增与变更请查看 [AKShare 版本更新说明](https://akshare.akfamily.xyz/changelog.html)。
 
-0.0.89: fix: fix docs
+## 更新记录
 
-0.0.89: fix: fix get_latest_version
+0.1.13: fix: bring the save_data usage note in line with AKQuant 0.3.91
 
-0.0.88: fix: fix update typer deps
+1. save_data 返回的 usage 说明与 AKQuant 0.3.90、0.3.91 的行为对齐：漏传 symbol 时 AKQuant 会报错（此前写的是“会把文件名当作标的名”）；东方财富行情接口的中文列名 AKQuant 也能识别，不再只提新浪财经、腾讯的接口，并提示成交量单位以各列说明为准、AKQuant 不做换算
+2. 本版本只改了这段说明文字，接口行为不变
 
-0.0.87: fix: fix update python 3.13
+0.1.12: feat: add the save_data MCP tool and queue identical concurrent requests
 
-0.0.86: add: add log function
+1. MCP 新增工具 save_data（仅 stdio 方式）：把接口返回的完整数据保存为本机的 CSV 文件，不受 get_data 的 1000 行限制，返回文件路径、总行数、各列的说明（含单位）与前 5 行。文件保存在用户目录下的 .aktools/data，可用环境变量 AKTOOLS_DATA_DIR 修改，助手不能指定保存路径；相同的请求覆盖同一个文件，超过 7 天的文件在保存时自动清理。该工具会写文件，没有标注为只读，客户端调用前通常会请求确认
+2. 配合 AKQuant 的 MCP，可以回测 A 股个股以外的品种：用 save_data 保存指数、ETF、期货、港股、美股的行情，再把文件路径交给 AKQuant 的 prepare_data。AKQuant 0.3.89 及更早版本需要把 AKTOOLS_DATA_DIR 设在 AKQuant 的项目目录内，并使用列名为英文的接口（新浪财经、腾讯）；AKQuant 0.3.90 起直接读取 AKTools 的数据目录，不需要配置
+3. 同一接口、同样参数的请求同时到达时，只访问上游数据源一次，其余请求等它完成后使用缓存的结果；此前每个请求都会各自访问上游，容易加重限流。关闭结果缓存（--cache-ttl 0）时不生效
+4. AKShare 的最低版本要求提高到 1.20.65：该版本起所有数据接口统一返回表格，此前有 11 个接口返回字典、列表或字符串，通过 AKTools 调用会报错
 
-0.0.85: fix: update python version
+0.1.11: docs: follow the *_hist_sina renames of AKShare 1.20.64
 
-0.0.84: fix: fix homepage url
+1. AKShare 1.20.64 把新浪财经的 6 个股票日线接口改名并新增 period 参数（可选 daily、weekly、monthly）：stock_zh_a_daily_sina→stock_zh_a_hist_sina、stock_zh_a_cdr_daily_sina→stock_zh_a_cdr_hist_sina、stock_zh_b_daily_sina→stock_zh_b_hist_sina、stock_zh_kcb_daily_sina→stock_zh_kcb_hist_sina、stock_hk_daily_sina→stock_hk_hist_sina、stock_us_daily_sina→stock_us_hist_sina。文档中的示例随之改用新名称，如 /api/public/stock_zh_a_hist_sina?symbol=sh600519
+2. AKShare 的最低版本由 1.20.58 提高到 1.20.64，文档里的示例地址才能直接使用；请求旧名称（如 /api/public/stock_zh_a_daily_sina）会返回 404 并提示新的名称与地址
+3. AKTools 自身的代码没有变化
 
-0.0.83: fix: fix Dockerfile
+0.1.10: fix: stop exposing AKShare's configuration functions as interfaces
 
-0.0.82: fix: fix connection.py
+**安全修复，建议所有用户升级。** 0.1.9 及更早的版本把 AKShare 顶层的所有函数都当作数据接口，其中包括设置函数：请求 /api/public/set_proxies、set_timeout、set_token，或通过 MCP 的 get_data 调用它们，会改掉整个服务的代理、超时与令牌。没有设置访问令牌（--token）的服务，任何能访问到它的人都可以借此把服务的上游请求转到自己指定的代理。get_token 等读取函数会报错，不会返回令牌内容。
 
-0.0.81: add: add support for Python 3.11
+1. 只有 AKShare 接口登记中的数据接口才能被调用和列出；set_proxies、set_timeout、set_token、get_proxies、get_timeout、get_token、pro_api、search、interface_info、list_categories、renamed_info 不再是接口，请求时返回 404。代理与超时仍通过启动参数 --proxy、--timeout 设置
+2. 暂时无法升级的服务，请不要对不可信的网络开放，或设置访问令牌
 
-0.0.80: fix: fix uvicorn run command
+0.1.9: feat: tell the new name when a renamed or removed interface is requested
 
-0.0.79: fix: fix typos in homepage.html
+1. 请求已更名的旧接口名时，404 的报错信息给出现在的名称与新的请求地址，例如请求 /api/public/stock_zh_a_hist 会提示“stock_zh_a_hist 已在 AKShare 1.20.46 更名为 stock_zh_a_hist_em，请改为请求 /api/public/stock_zh_a_hist_em”；已移除的接口给出移除的版本与更新日志地址。此前只按名称相似度列出几个接口，改名的接口常常排不到第一位，已移除的接口列出的则是不相干的名称
+2. MCP 的 describe_interface 与 get_data 遇到旧接口名时，提示改用的 name 并建议先用 describe_interface 查看参数；search_interfaces 用旧接口名搜索时，现在的名称排在结果的第一位，并在 hint 中说明。AI 助手凭记忆写出旧接口名时，一次报错就能改对
+3. 提示按调用渠道分别组织：HTTP 给出请求地址，MCP 给出工具的用法。去向数据取自 AKShare 1.20.58 新增的 ak.renamed_info，AKShare 的最低版本由 1.20.48 提高到 1.20.58；名称拼写错误等其他情况仍按名称相似度给出候选
 
-0.0.78: add: add test_cli.py
+0.1.8: fix!: follow the interface renames of AKShare 1.20.41-1.20.48
 
-    1. 增加测试文件，增加项目的稳健型
+**不兼容的改动：要求 AKShare 1.20.48 或更高版本，原先的接口网址需要改用新的接口名。** AKShare 在 1.20.41～1.20.48 按金融含义统一了接口命名，并把类目由 22 个合并为 15 个，共 300 多个接口改名、旧名称不再保留，例如 stock_zh_a_hist 改为 stock_zh_a_hist_em、stock_zh_a_daily 改为 stock_zh_a_daily_sina、tool_trade_date_hist_sina 改为 calendar_trade_date_hist_sina。请求旧名称会返回 404，完整对照见 [AKShare 接口更名一览表](https://akshare.akfamily.xyz/changelog.html#changelog-rename)。
 
-0.0.77: add: add cli.py file
+1. AKShare 的最低版本由 1.20.39 提高到 1.20.48
+2. 首页的连通性测试链接、文档、示例与 MCP 工具说明中的接口名全部改为新名称
+3. AKTools 自身的接口、参数与返回格式没有变化
 
-0.0.76: fix: fix rename master to main
+0.1.7: build: require Python 3.11.5 or later
 
-0.0.75: add: add version interface
+**不兼容的改动：最低 Python 版本由 3.11 提高到 3.11.5。** 使用 Python 3.11.0～3.11.4 的环境会停留在 0.1.6，请升级到 3.11.5 或更高的版本（3.12 及以上不受影响）。
 
-0.0.74: add: add typer for CLI
+1. 最低 Python 版本提高到 3.11.5：AKShare 依赖的网页解析库 soupsieve 在 4.0 修复了一个拒绝服务漏洞，修复版要求 Python 3.11.5，更低的版本只能安装到有漏洞的 2.10
 
-0.0.73: fix: fix tips
+0.1.6: feat: curated alternatives, better search and clearer errors for MCP
 
-0.0.72: add: add type hint for CLI
+1. 东方财富行情接口被限流时，建议的同类接口改为取自 AKShare 人工维护的对照表，不再按接口名称猜测；0.1.5 的猜测有不少配错，如把 ST 股票列表配给日线。describe_interface 与 /api/interfaces/{接口名} 新增 alternatives，取数前就能看到其他来源的同类接口。没有登记的接口不再给出候选
+2. 搜索更准：随 AKShare 1.20.39 支持常用同义词，“港股 日线”“期货 日线”这类说法能直接找到日线行情接口；MCP 的 search_interfaces 没有匹配时返回提示，说明关键词应描述数据类型而不是证券名称
+3. 接口名写错或使用已更名的旧接口名（如 get_futures_daily）时，报错中列出名称相近的接口，MCP 与 HTTP API 相同
+4. 大连商品交易所接口被对方网站拒绝访问时，不再提示“请稍后重试”，改为说明重试无效并保留 AKShare 给出的替代接口
+5. 更多数据来源显示中文名称，如集思录、上海黄金交易所、财联社
+6. MCP 的 search_interfaces 工具描述中写明优先选用其他来源的规则，不依赖客户端是否向模型传递服务说明
+7. AKShare 的最低版本要求提高到 1.20.39
 
-0.0.71: add: add more info to homepage
+0.1.5: feat: label data sources and suggest alternatives on Eastmoney rate limits
 
-0.0.70: add: add homepage
+1. MCP 的 search_interfaces、describe_interface 与 /api/interfaces/{接口名} 新增 source，用中文标明数据来源，如“新浪财经”“同花顺”“东方财富”；describe 另有 rate_limit。东方财富行情类接口（实时行情、历史 K 线、板块、资金流等）标为“东方财富·行情（频繁访问易限流）”，与不限流的东方财富数据中心区分。限流标记需要 AKShare 1.20.37 及以上版本，旧版本只显示“东方财富”
+2. 修复东方财富行情接口被限流时返回 502 并提示检查代理的问题，现在返回 429
+3. 东方财富行情接口被限流时，报错说明需要等待的时间，并在有把握时列出其他来源的同类接口，如 stock_zh_a_hist 被限流时建议 stock_zh_a_hist_tx（腾讯）、stock_zh_a_daily（新浪财经）；MCP 与 HTTP API 相同
+4. MCP 发给助手的使用说明要求：批量获取行情数据时优先选用其他来源，被限流时不要立即重试，回答时说明数据来源
+5. 文档新增 WorkBuddy 与 Codex 的 MCP 配置方法，以及与 AKQuant 联用、由 AI 自动回测的说明
 
-    1. 增加首页，提供更多帮助信息
+0.1.4: feat: better MCP search, paging and interface details
 
-0.0.69: fix: fix file path in datasets.py
+1. MCP 的 get_data 新增 offset：用于翻页，负数表示从末尾倒数，如 -20 取最后 20 行；此前只能取表头，按日期升序的数据最新的行取不到
+2. MCP 的 search_interfaces 改为按相关度检索，支持“A股 日线”“期货持仓”等多个关键词，结果附带类目
+3. describe_interface 与 /api/interfaces/{接口名} 补充返回列、数据范围说明与调用示例
+4. MCP 的三个工具标注为只读
+5. 文档站发布 llms.txt，向 AI 助手说明 AKTools 的接入方式
 
-0.0.68: fix: fix cookie in parameter
+0.1.3: fix: clear errors for unknown parameters
 
-0.0.67: fix: fix parameter with blank character
+1. 参数名写错时返回 400，并列出该接口的全部可用参数，不再返回 404 并提示升级 AKShare，也不会白白请求一次上游网站；MCP 的 get_data 同样适用
+2. 最低依赖提升到 AKShare 1.20.13：页码等数字参数可以直接以文本传入，--timeout 对所有接口生效
+3. AKShare 1.20.13 起各接口不再提供 timeout 参数，旧网址中的 timeout 会返回 400 并提示改用 --timeout
 
-0.0.66: fix: fix setup.py
+0.1.2: feat: optional access token
 
-0.0.65: fix: fix favicon.ico path
+1. 新增可选的访问令牌（--token，环境变量 AKTOOLS_TOKEN）：设置后，数据接口与 /mcp 需要携带令牌，支持请求头 Authorization: Bearer <令牌> 或网址参数 _token=<令牌>，多个令牌用逗号分隔；主页、/version 与 /docs 保持公开；未设置时行为不变
+2. 修复主页上的地址写死为 http:// 的问题：经反向代理以 HTTPS 访问时，主页显示的接口与 /mcp 地址改为与实际访问的协议、域名一致
 
-0.0.64: fix: fix favicon.ico path
+0.1.1: fix: homepage no longer blocks the server
 
-0.0.63: fix: fix favicon.ico path
+**不兼容的改动：已移除 PyScript 数据展示页 `/api/show` 与 `/api/show-temp/{接口名}`。** 取数请使用 `/api/public/{接口名}`，表格可加 `_format=csv` 或 `_format=xlsx` 下载。
 
-0.0.62: add: add favicon.ico
+1. 修复主页与 /version 查询 PyPI 最新版本时阻塞整个服务的问题：内网或无法访问 PyPI 的环境中，此前每打开一次主页，其他请求（取数据、/mcp）都会卡住约 10 秒；最新版本的查询结果改为缓存 1 小时
+2. Dockerfile 新增构建参数 BASE_IMAGE，国内网络可改用镜像站拉取基础镜像；文档说明可用 WEB_CONCURRENCY 调整 worker 数量
+3. 常见问题补充国内 PyPI 镜像同步延迟时如何安装新版本
+4. 内部重构：拆分 aktools/core/api.py；只改文档时 CI 不再运行测试
 
-0.0.61: fix: fix remove dependency from akscript.html
+0.1.0: feat: proxy and timeout settings, clearer upstream errors
 
-    1. 从 akscript.html 中移除 numpy 和 matplotlib 依赖
+AKTools 已具备 HTTP API 与 MCP 两种完整的使用方式，自本版本起进入 0.1.x。
 
-0.0.60: add: add css and html to akscript.py
+1. 新增 --proxy 与 --timeout（环境变量 AKTOOLS_PROXY、AKTOOLS_TIMEOUT），设置访问上游数据源的代理与读取超时，需要 AKShare 1.20.4 及以上版本
+2. AKShare 自定义的异常返回对应的状态码：网络问题 502、上游限流 429、参数不合法 400、上游报错与页面改版 502，不再一律返回 404 并提示升级 AKShare；MCP 工具同样适用
+3. 新增环境变量 AKTOOLS_LOG_DIR 指定日志目录
+4. 修复跑测试时日志写进仓库目录的问题
 
-0.0.59: add: add templates
+0.0.99: feat: publish to the official mcp registry
 
-0.0.58: add: add jinja2 to setup.py
+1. 登记到 MCP 官方注册表（io.github.akfamily/aktools），各 MCP 客户端的市场可以搜到 AKTools；发布流程在 PyPI 发布后自动登记
+2. 新增 aktools 命令（同 python -m aktools）与 aktools mcp 子命令（同 aktools-mcp）
+3. README 与文档改为 HTTP API 与 MCP 两种使用方式并列，加入 Claude Code 实际使用演示、Cursor 一键安装按钮与 MCP 排障说明
+4. 启动提示与内置主页显示 /mcp 地址；PyPI 简介与关键词补充 MCP
 
-0.0.57: fix: fix setup.py
+0.0.98: feat: add mcp server and result cache
 
-0.0.56: add: add init.py
+1. 新增 MCP 服务，供 Claude、Cursor 等 AI 助手获取数据：随 HTTP 服务提供 /mcp，或在助手中配置 uvx --from aktools aktools-mcp 以 stdio 方式运行
+2. 新增结果缓存：同一接口、同样参数在 60 秒内直接返回上次的数据，可用 --cache-ttl 调整，响应头 X-AKTools-Cache 标明是否命中
+3. 定期清空 AKShare 内部缓存（默认每小时），修复服务长期运行后板块名称等数据不更新的问题，可用 --akshare-cache-clear 调整
+4. 数据无法转换为所选格式时返回说明；日志目录不可写时改写到系统临时目录
+5. 文档新增“什么情况下不必用 AKTools”、缓存设置与 AI 助手（MCP）的说明
 
-0.0.55: add: add datasets.py
+0.0.97: docs: reorganize docs for beginners
 
-0.0.54: fix: fix PyScript demo url
+1. 文档按新手学习顺序重组：首页、快速入门、使用指南（调用规则、接口目录、多语言调用）、部署、常见问题
+2. 新增快速入门教程，从安装到查找接口、查看参数、获取数据并下载 Excel，示例均为实际运行结果
+3. 首页与 README 补充接口目录、CSV/Excel 下载等新功能的说明，原“详细文档”页面已拆分
+4. README 的文档状态徽章改用 shields.io，修复在 GitHub 上无法显示的问题
 
-0.0.53: fix: fix PyScript demo url
+0.0.96: feat: add interface catalog and csv/xlsx export
 
-    1. 修复 PyScript demo url 
+1. 新增接口目录：/api/interfaces 列出全部接口并支持按接口名或中文标题搜索，/api/interfaces/{接口名} 返回各参数的默认值、类型和说明
+2. /api/public 新增 _format 参数，可将数据下载为 CSV（带 BOM，Excel 直接打开不乱码）或 Excel 文件
+3. 修复 /api/show 返回未渲染模板、无法加载数据的问题
+4. PyScript 数据展示页升级到 2026.7.3，并改用国内可访问的 Pyodide 节点
+5. 以 --host 0.0.0.0 启动时，命令行提示与 --auto 打开的地址改用 127.0.0.1，可直接在浏览器中打开
+6. 文档站迁移到 Zensical，重写使用文档、贡献指南与行为准则，更新 PyPI 项目信息
 
-0.0.52: add: add pyscript support
-    
-    1. 新增 PyScript Demo 演示
+0.0.95: feat: distinguish upstream network errors
 
-0.0.51: add: add CORS support
+1. 上游数据源不可达（网络/代理错误）时返回 502 并提示排查，不再误导为升级 AKShare
+2. 文档与主页的连通性测试链接改用更稳定的新浪接口
+3. 文档新增常见问题：502/404 的区别与代理问题排查
 
-    1. 新增跨域的支持
+0.0.94: refactor: optimize built-in HTML pages
 
-0.0.50: add: add interface docs
+1. 内置主页优化：语言标记、移动端适配、样式整理与深浅色配色
+2. PyScript 数据展示页由已废弃的 alpha 版升级到当前稳定版
+3. 同步文档描述，参照 AKShare 重写 .gitignore
 
-    1. 给接口增加描述和简要说明
-    2. 修正部分函数的签名
+0.0.93: refactor: remove demo user login
 
-0.0.49: add: add FastAPI docs introduction
+1. 删除演示性的用户登录模块（aktools/login）与 /api/private 私人接口
+2. 移除 POST /auth/token 端点；数据获取统一使用 GET /api/public/{接口}
 
-    1. 提供文档的标题、描述及版本
-    2. 文档的版本与 AKShare 的版本对应，方便查询相关接口
+0.0.92: fix: fix template response and cli startup
 
-0.0.48: fix: fix docs
-
-    1. 修正 URL 连接
-    2. 修正部分表述错误
-
-0.0.47: add: add tips
-    
-    1. 移除路径输出
-    2. 在终端窗口输出：`http://127.0.0.1:8080/docs` 类似的链接，用户可以一键直达接口文档
-
-0.0.46: fix: fix setup.py
-
-    1. 在 setup.py 中增加 `python-multipart` 的依赖
-
-0.0.45: add: add module format support
-    
-    1. 把核心 API 模块和登录模块拆分开
-    2. 把项目结构化，有利于后续开发
-    3. 增加 run.py 文件作为项目的主入口
-
-0.0.44: add: add support response status code
-
-    1. 增加用户认证模块，但是该程序目前并没有采用数据库，还是在测试中
-    2. 目前用户可以通过 username 为 `akshare` 和 password 为 `akfamily` 来获取 token
-    3. 通过在请求头中设置 token 参数来访问接口
-
-0.0.43: add: add support response status code
-    
-    1. 增加返回状态码，用户可以通过状态码来判断是否获取到数据
-    2. 修正一些表述错处
+1. 修复新版 Starlette 下主页与模板页面返回 500 的问题（#239）
+2. 修复安装路径含空格时 aktools 启动闪退的问题（#238）
+3. Python 版本要求提升到 3.11 及以上，与 AKShare 保持一致
+4. 更新 Dockerfile，打包配置由 setup.py 迁移到 pyproject.toml
+5. 删除未使用的数据库相关代码

@@ -1,36 +1,76 @@
+# 文档站配置：由 Zensical 读取并构建（uv run --group docs zensical serve），
+# 写法与 Material for MkDocs 兼容，见 https://zensical.org/docs/compatibility/mkdocs/migration/
 site_name: AKTools 官方文档
-site_description: AKTools framework, high performance, easy to learn, fast to code, ready for production
+site_description: AKTools 是 AKShare 的 MCP 服务与 HTTP API 工具，让 Claude、Cursor 等 AI 助手和任何编程语言都能获取 AKShare 的财经数据
 site_url: https://aktools.akfamily.xyz/
-theme:
-  name: material
-  logo: https://fastapi.tiangolo.com/img/icon-white.svg
-  favicon: https://fastapi.tiangolo.com/img/favicon.png
-  language: zh
-  features:
-    - content.code.annotate
-  palette:
-    - scheme: default
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
 repo_name: akfamily/aktools
 repo_url: https://github.com/akfamily/aktools
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2021-present AKFamily
+
+theme:
+  name: material
+  # classic 保持 Material for MkDocs 的外观，custom.css 与 termynal 依赖其页面结构
+  variant: classic
+  language: zh
+  favicon: img/favicon.ico
+  icon:
+    logo: material/api
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - content.code.annotate
+    - content.code.copy
+    - navigation.footer
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+
+# 按新手的学习顺序排列
+nav:
+  - 首页: index.md
+  - 快速入门: getting-started.md
+  - 使用指南:
+      - 调用规则: guide/usage.md
+      - 接口目录: guide/catalog.md
+      - 多语言调用: guide/examples.md
+      - AI 助手（MCP）: guide/mcp.md
+  - 部署: deploy.md
+  - 常见问题: faq.md
+  - 版本说明: aktools_version.md
 
 markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
+  - pymdownx.keys
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 
 extra_css:
-  - 'css/termynal.css'
-  - 'css/custom.css'
+  - css/termynal.css
+  - css/custom.css
 
 extra_javascript:
-  - 'js/termynal.js'
-  - 'js/custom.js'
+  - js/termynal.js
+  - js/custom.js

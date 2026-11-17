@@ -1,7 +1,116 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aktools"
+dynamic = ["version"]
+description = "HTTP API and MCP server for AKShare: fetch financial data from any programming language or AI assistant"
+readme = "README.md"
+requires-python = ">=3.11.5"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "AKFamily", email = "albertandking@gmail.com"}
+]
+keywords = [
+    "akshare",
+    "http-api",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "llm",
+    "ai-agent",
+    "fastapi",
+    "financial-data",
+    "stock",
+    "option",
+    "futures",
+    "bond",
+    "index",
+    "finance",
+    "quant",
+    "quantitative",
+    "investment",
+    "trading",
+    "algotrading",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Operating System :: OS Independent",
+    "Framework :: FastAPI",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+    "akshare>=1.20.65",
+    "requests>=2.22.0",
+    "fastapi>=0.115.5",
+    "uvicorn>=0.16.0",
+    "python-multipart>=0.0.9",
+    "jinja2>=3.1.2",
+    "typer>=0.6.1",
+    # MCP 服务（/mcp 与 aktools-mcp 命令）。SDK 的大版本之间不兼容（1.x 到 2.x 改了 API），限制在 2.x
+    "mcp>=2.3.0,<3",
+]
+
+[project.scripts]
+# aktools 与 python -m aktools 相同：默认启动 HTTP 服务，aktools mcp 以 stdio 方式启动 MCP 服务。
+# MCP 官方注册表的客户端按包名运行 uvx aktools，server.json 据此登记为 uvx aktools mcp
+aktools = "aktools.__main__:main"
+# 供 AI 助手以 stdio 方式启动 MCP 服务，如 uvx --from aktools aktools-mcp
+aktools-mcp = "aktools.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/akfamily/aktools"
+Documentation = "https://aktools.akfamily.xyz/"
+Changelog = "https://aktools.akfamily.xyz/aktools_version/"
+Issues = "https://github.com/akfamily/aktools/issues"
+
+# 开发依赖使用 PEP 735 dependency-groups 而非 extra：组不会进入包的元数据，
+# 终端用户安装 aktools 时不会被装上这些工具链。uv sync 默认安装 dev 组。
+[dependency-groups]
+# TestClient 在新版 Starlette 中依赖 httpx2
+test = ["pytest>=8.0.0", "httpx2>=2.0.0"]
+# ruff 版本的唯一来源：CI 的 lint job 与 .pre-commit-config.yaml 的本地钩子
+# 都经 uv.lock 从本组取用，没有第二处版本号需要同步
+lint = ["ruff==0.17.4"]
+# 文档站构建工具（Material for MkDocs 的继任者，直接读取 mkdocs.yml）。
+# 不并入 dev 组：只有改文档时才需要，用 uv run --group docs 按需安装；
+# Read the Docs 也只安装本组，见 .readthedocs.yaml
+docs = ["zensical>=0.0.73"]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+    "commitizen>=4.12.1",
+    "pre-commit>=3.6.2",
+]
+
+# uv.lock 会写入解析时使用的索引地址，因此显式声明官方 PyPI。
+# 本段优先级高于用户级 uv.toml 与 UV_INDEX_URL 环境变量，
+# 本地配置了国内镜像的开发者重新生成的锁文件依然指向官方源。
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+
+[tool.setuptools.dynamic]
+# 版本号的唯一来源是 aktools/_version.py 中的 __version__
+version = {attr = "aktools._version.__version__"}
+
+[tool.setuptools.packages.find]
+# 只打包 aktools，避免把 tests 作为顶层包装进 site-packages
+include = ["aktools*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.pk", "*.woff", "*.html", "*.ico"]
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    "aktools/__init__.py",  # 初始化导入库文件，必须包含本文件
     ".bzr",
     ".direnv",
     ".eggs",
@@ -34,8 +143,8 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.11
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
