@@ -86,3 +86,5 @@ site/
 # 服务日志，含按天轮转产生的 aktools_log.log.YYYY-MM-DD
 aktools_log.log*
 /log/*
+
+.workbuddy/
