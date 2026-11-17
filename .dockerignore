@@ -1,2 +1,5 @@
 # 镜像从 PyPI 安装 aktools，构建时不需要仓库内容
 *
+# 例外：Dockerfile 需要读取本地特供 wheel，必须让它进入构建上下文
+!Dockerfile
+!*.whl
